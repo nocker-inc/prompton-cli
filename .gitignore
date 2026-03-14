@@ -1,0 +1,4 @@
+/dist
+/node_modules
+/src/graphql-env.d.ts
+/introspection.json
