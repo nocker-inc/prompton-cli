@@ -14,7 +14,7 @@
     "plugins": [
       {
         "name": "gql.tada/ts-plugin",
-        "schema": "./introspection.json",
+        "schema": "https://graphql.prompton.io",
         "tadaOutputLocation": "./src/graphql-env.d.ts"
       }
     ]
