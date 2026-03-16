@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # prompton-cli
 
 Prompton GraphQL APIを操作するCLI。人間とAIツール（Claude Code等）の両方が使うことを前提としている。
@@ -8,38 +12,47 @@ Prompton GraphQL APIを操作するCLI。人間とAIツール（Claude Code等�
 - **デフォルトJSON出力**: 出力はデフォルトでJSON。AIがパースしやすく、フィールド名で意味が明確、ネスト構造もそのまま表現できる。人間向けには `--text, -t` オプションでテーブル/key-value形式に切り替える。printer.tsは `--text` 時のみ使用。
 - **RESTful引数設計**: `prompton <resource> [id] [sub-resource] [options]` — REST APIのURLパスと同じ構造。
 - **Hono as CLI router**: Honoの`app.request()`でCLI引数をHTTPリクエストに変換しルーティングする。サーバーは起動しない。
-- **1ファイル1エンドポイント**: `src/commands/<resource>/<action>.ts` がそれぞれ1つのエンドポイントに対応。
+- **1ファイル1エンドポイント**: `src/routes/<resource>/<action>.ts` がそれぞれ1つのエンドポイントに対応。
 - **責務の分離**: ハンドラーはデータ取得+`c.json()`で返すだけ。出力フォーマットは`printer.ts`、エラーは`lib/errors.ts`のカスタム例外。
+
+## コマンド
+
+```sh
+vp pack              # ビルド（dist/index.mjs）
+vp pack --watch      # ウォッチモード
+vp test              # テスト実行（bun:test）
+vp check             # フォーマット + リント + 型チェック
+vp fmt               # フォーマット（セミコロンなし）
+bun src/index.ts     # ソースから直接実行
+bun test             # テスト実行（bun直接）
+npx gql.tada generate-output  # GraphQL型定義を再生成
+make publish         # ビルド + npm publish
+```
 
 ## アーキテクチャ
 
+CLI引数の処理フロー:
 ```
-src/
-├── index.ts              # ルート定義 + CLI引数→Honoリクエスト変換
-├── factory.ts            # 共有Honoファクトリ
-├── client.ts             # GraphQLクライアント (gql.tada + fetch)
-├── router.ts             # CLI引数パーサー (--flag → query params)
-├── printer.ts            # パスベースの出力フォーマッター
-├── on-error.ts           # エラーハンドラー
-├── lib/
-│   └── errors.ts         # HTTPExceptionベースのカスタムエラー
-├── graphql-env.d.ts      # gql.tada自動生成型定義
-└── commands/
-    ├── works/
-    │   ├── index.ts      # GET /works (一覧)
-    │   └── show.ts       # GET /works/:work (詳細)
-    └── users/
-        ├── index.ts      # GET /users (一覧)
-        ├── show.ts       # GET /users/:user (詳細)
-        └── works.ts      # GET /users/:user/works (ユーザーの作品)
+CLI引数 → router.ts (パス+フラグに分離)
+  → GETならクエリパラメータ、POSTならJSONボディに変換
+  → app.request(url) でHonoルーターに渡す
+  → ハンドラーがGraphQL実行 → c.json()で返す
+  → index.tsで出力（デフォルトJSON、--textならprinter.ts）
+```
+
+認証フロー:
+```
+prompton login → ブラウザでGoogleログイン → refresh tokenを~/.config/prompton/credentials.jsonに保存
+毎リクエスト → refresh token → Firebase REST APIでID token取得 → Authorization headerに付与
 ```
 
 ## 技術スタック
 
+- **vp (Vite Plus)**: ビルド（vp pack = tsdown）、フォーマット、リント、テスト
 - **Hono**: ルーティング、バリデーション（zValidator）、エラーハンドリング
-- **gql.tada**: 型安全なGraphQLクエリ（introspection.jsonからスキーマ取得）
-- **Zod**: クエリパラメータのバリデーション
-- **tsdown**: ビルド（単一ESMファイル出力）
+- **gql.tada**: 型安全なGraphQLクエリ（`https://prompton.io/graphql` からスキーマ取得）
+- **Zod**: クエリパラメータ/ボディのバリデーション
+- **Firebase Auth**: Google OAuth（デスクトップアプリ型）でログイン
 
 ## コマンド体系
 
@@ -50,16 +63,19 @@ prompton works create             # 作成（動詞 = 変更操作）
 prompton works <id> update        # 更新
 prompton works <id> delete        # 削除
 prompton users <id> works         # ネストリソース（1段まで）
+prompton my works                 # 自分のデータ（viewer経由）
 prompton <command> --help         # エンドポイント単位のヘルプ
 ```
 
 ## 新しいエンドポイントの追加手順
 
-1. `src/commands/<resource>/<action>.ts` を作成
+1. `src/routes/<resource>/<action>.ts` を作成
 2. zodスキーマ、GraphQLクエリ、`factory.createHandlers()`を定義し`export default`
 3. `help`文字列を`export`
 4. `src/index.ts`にimportして`app.get()`（または`app.post()`）で登録
-5. `src/printer.ts`に `--text` 用の出力関数を追加（JSONはデフォルトで対応済み）
+5. GETレスポンスには `withPageURL` / `withPageURLs` でページURLを付与
+6. POSTの場合は `router.ts` の `POST_COMMANDS` にコマンド名を追加
+7. `src/printer.ts`に `--text` 用の出力関数を追加（JSONはデフォルトで対応済み）
 
 ## コーディング規約
 

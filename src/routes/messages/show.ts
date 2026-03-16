@@ -10,30 +10,23 @@ const schema = z.object({
   help: z.string().optional(),
 })
 
-export const help = "Usage: prompton works <id>"
+export const help = "Usage: prompton messages <threadId>"
 
 const Query = graphql(`
-  query PromptonWork($id: ID!) {
-    promptonWork(id: $id) {
+  query PromptonMessageThread($threadId: ID!) {
+    promptonMessageThread(threadId: $threadId) {
       id
-      title
-      body
       createdAt
       updatedAt
-      likesCount
-      viewsCount
-      isPublic
-      isNSFW
-      price
-      sampleImageURL
-      user {
+      messages {
         id
-        name
-        login
-      }
-      tags {
-        id
-        name
+        text
+        createdAt
+        user {
+          id
+          name
+          login
+        }
       }
     }
   }
@@ -46,12 +39,12 @@ export default factory.createHandlers(zValidator("query", schema), async (c) => 
     return c.text(help)
   }
 
-  const id = c.req.param("work")
-  const data = await execute(Query, { id: id ?? "" })
+  const threadId = c.req.param("thread")
+  const data = await execute(Query, { threadId: threadId ?? "" })
 
-  if (!data.promptonWork) {
-    throw new NotFoundException(`Work not found: ${id}`)
+  if (!data.promptonMessageThread) {
+    throw new NotFoundException(`Message thread not found: ${threadId}`)
   }
 
-  return c.json(withPageURL("work", data.promptonWork))
+  return c.json(withPageURL("message", data.promptonMessageThread))
 })

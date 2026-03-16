@@ -8,6 +8,31 @@ const SHORT_FLAGS: Record<string, string> = {
 }
 
 const GLOBAL_FLAGS = new Set(["text", "help", "version"])
+const POST_COMMANDS = new Set([
+  "login",
+  "logout",
+  "create",
+  "update",
+  "update-login",
+  "update-avatar",
+  "update-header",
+  "delete",
+  "publish",
+  "unpublish",
+  "like",
+  "unlike",
+  "follow",
+  "unfollow",
+  "block",
+  "accept",
+  "reject",
+  "cancel",
+  "close",
+  "send",
+  "send-request",
+  "create-plan",
+  "create-coffee",
+])
 
 export function toRequest(args: string[]) {
   const segments: string[] = []
@@ -56,5 +81,7 @@ export function toRequest(args: string[]) {
 
   const path = `/${segments.join("/")}`
   const query = params.size > 0 ? `?${params}` : ""
-  return { path, url: `http://localhost${path}${query}`, global }
+  const lastSegment = segments[segments.length - 1]
+  const method = POST_COMMANDS.has(lastSegment) || POST_COMMANDS.has(segments[0]) ? "POST" : "GET"
+  return { path, url: `http://localhost${path}${query}`, method, global }
 }

@@ -4,6 +4,7 @@ import { z } from "zod"
 import { execute } from "@/client"
 import { factory } from "@/factory"
 import { NotFoundException } from "@/lib/errors"
+import { withPageURLs } from "@/lib/page-url"
 
 const schema = z.object({
   limit: z.coerce.number().default(20),
@@ -33,27 +34,27 @@ const Query = graphql(`
   }
 `)
 
-export default factory.createHandlers(
-  zValidator("query", schema),
-  async (c) => {
-    const q = c.req.valid("query")
+export default factory.createHandlers(zValidator("query", schema), async (c) => {
+  const q = c.req.valid("query")
 
-    if (q.help) {
-      return c.text(help)
-    }
+  if (q.help) {
+    return c.text(help)
+  }
 
-    const id = c.req.param("user")
+  const id = c.req.param("user")
 
-    const data = await execute(Query, {
-      id: id ?? "",
-      offset: q.offset,
-      limit: q.limit,
-    })
+  const data = await execute(Query, {
+    id: id ?? "",
+    offset: q.offset,
+    limit: q.limit,
+  })
 
-    if (!data.promptonUser) {
-      throw new NotFoundException(`User not found: ${id}`)
-    }
+  if (!data.promptonUser) {
+    throw new NotFoundException(`User not found: ${id}`)
+  }
 
-    return c.json(data.promptonUser)
-  },
-)
+  return c.json({
+    ...data.promptonUser,
+    works: withPageURLs("work", data.promptonUser.works),
+  })
+})

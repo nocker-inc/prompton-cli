@@ -1,7 +1,7 @@
 .PHONY: build publish
 
 build:
-	npm run build
+	vp pack
 
 publish: build
 	npm publish --access=public

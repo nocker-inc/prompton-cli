@@ -12,7 +12,7 @@ const schema = z.object({
   help: z.string().optional(),
 })
 
-export const help = `Usage: prompton works [options]
+export const help = `Usage: prompton plans [options]
 
 Options:
   -l, --limit        Number of results (default: 20)
@@ -20,19 +20,15 @@ Options:
   -s, --search       Search query`
 
 const Query = graphql(`
-  query PromptonWorks($offset: Int!, $limit: Int!, $search: String) {
-    promptonWorks(offset: $offset, limit: $limit, where: { search: $search }) {
+  query PromptonPlans($offset: Int!, $limit: Int!, $search: String) {
+    promptonPlans(offset: $offset, limit: $limit, where: { search: $search }) {
       id
-      title
-      likesCount
-      viewsCount
-      isPublic
-      sampleImageURL
-      user {
-        id
-        name
-        login
-      }
+      name
+      description
+      unitPrice
+      minimumQuantity
+      maximumQuantity
+      category
     }
   }
 `)
@@ -50,5 +46,5 @@ export default factory.createHandlers(zValidator("query", schema), async (c) => 
     search: q.search ?? null,
   })
 
-  return c.json(withPageURLs("work", data.promptonWorks))
+  return c.json(withPageURLs("plan", data.promptonPlans))
 })

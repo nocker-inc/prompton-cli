@@ -10,31 +10,22 @@ const schema = z.object({
   help: z.string().optional(),
 })
 
-export const help = "Usage: prompton works <id>"
+export const help = "Usage: prompton plans <id>"
 
 const Query = graphql(`
-  query PromptonWork($id: ID!) {
-    promptonWork(id: $id) {
+  query PromptonPlan($id: ID!) {
+    promptonPlan(id: $id) {
       id
-      title
-      body
-      createdAt
-      updatedAt
-      likesCount
-      viewsCount
-      isPublic
-      isNSFW
-      price
-      sampleImageURL
-      user {
-        id
-        name
-        login
-      }
-      tags {
-        id
-        name
-      }
+      name
+      description
+      unitPrice
+      minimumQuantity
+      maximumQuantity
+      category
+      featureCommercialUse
+      featureCopyrightFree
+      featureFanFiction
+      featurePrivate
     }
   }
 `)
@@ -46,12 +37,12 @@ export default factory.createHandlers(zValidator("query", schema), async (c) => 
     return c.text(help)
   }
 
-  const id = c.req.param("work")
+  const id = c.req.param("plan")
   const data = await execute(Query, { id: id ?? "" })
 
-  if (!data.promptonWork) {
-    throw new NotFoundException(`Work not found: ${id}`)
+  if (!data.promptonPlan) {
+    throw new NotFoundException(`Plan not found: ${id}`)
   }
 
-  return c.json(withPageURL("work", data.promptonWork))
+  return c.json(withPageURL("plan", data.promptonPlan))
 })

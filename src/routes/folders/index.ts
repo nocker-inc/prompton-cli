@@ -8,31 +8,22 @@ import { withPageURLs } from "@/lib/page-url"
 const schema = z.object({
   limit: z.coerce.number().default(20),
   offset: z.coerce.number().default(0),
-  search: z.string().optional(),
   help: z.string().optional(),
 })
 
-export const help = `Usage: prompton works [options]
+export const help = `Usage: prompton folders [options]
 
 Options:
   -l, --limit        Number of results (default: 20)
-  -o, --offset       Offset for pagination (default: 0)
-  -s, --search       Search query`
+  -o, --offset       Offset for pagination (default: 0)`
 
 const Query = graphql(`
-  query PromptonWorks($offset: Int!, $limit: Int!, $search: String) {
-    promptonWorks(offset: $offset, limit: $limit, where: { search: $search }) {
+  query PromptonFolders($offset: Int!, $limit: Int!) {
+    promptonFolders(offset: $offset, limit: $limit) {
       id
-      title
-      likesCount
-      viewsCount
+      name
+      description
       isPublic
-      sampleImageURL
-      user {
-        id
-        name
-        login
-      }
     }
   }
 `)
@@ -47,8 +38,7 @@ export default factory.createHandlers(zValidator("query", schema), async (c) => 
   const data = await execute(Query, {
     offset: q.offset,
     limit: q.limit,
-    search: q.search ?? null,
   })
 
-  return c.json(withPageURLs("work", data.promptonWorks))
+  return c.json(withPageURLs("folder", data.promptonFolders))
 })

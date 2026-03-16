@@ -3,6 +3,7 @@ import { graphql } from "gql.tada"
 import { z } from "zod"
 import { execute } from "@/client"
 import { factory } from "@/factory"
+import { withPageURLs } from "@/lib/page-url"
 
 const schema = z.object({
   limit: z.coerce.number().default(20),
@@ -30,21 +31,18 @@ const Query = graphql(`
   }
 `)
 
-export default factory.createHandlers(
-  zValidator("query", schema),
-  async (c) => {
-    const q = c.req.valid("query")
+export default factory.createHandlers(zValidator("query", schema), async (c) => {
+  const q = c.req.valid("query")
 
-    if (q.help) {
-      return c.text(help)
-    }
+  if (q.help) {
+    return c.text(help)
+  }
 
-    const data = await execute(Query, {
-      offset: q.offset,
-      limit: q.limit,
-      search: q.search ?? null,
-    })
+  const data = await execute(Query, {
+    offset: q.offset,
+    limit: q.limit,
+    search: q.search ?? null,
+  })
 
-    return c.json(data.promptonUsers)
-  },
-)
+  return c.json(withPageURLs("user", data.promptonUsers))
+})

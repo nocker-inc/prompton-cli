@@ -49,9 +49,7 @@ function printWorkList(works: Work[]) {
   }
   for (const w of works) {
     const title = w.title ?? "(untitled)"
-    console.log(
-      `${w.id}\t${title}\t@${w.user.login}\t♥${w.likesCount}\t👁${w.viewsCount}`,
-    )
+    console.log(`${w.id}\t${title}\t@${w.user.login}\t♥${w.likesCount}\t👁${w.viewsCount}`)
   }
 }
 
@@ -79,9 +77,7 @@ function printUserList(users: User[]) {
   }
   for (const u of users) {
     const req = u.isRequestable ? "✓" : "-"
-    console.log(
-      `${u.id}\t@${u.login}\t${u.name}\t${u.worksCount} works\t${req}`,
-    )
+    console.log(`${u.id}\t@${u.login}\t${u.name}\t${u.worksCount} works\t${req}`)
   }
 }
 

@@ -1,15 +1,27 @@
 import type { TadaDocumentNode } from "gql.tada"
 import { print } from "graphql"
+import { loadCredentials, refreshIdToken } from "@/lib/credentials"
 
-const ENDPOINT = "https://graphql.prompton.io"
+const ENDPOINT = "https://prompton.io/graphql"
 
 export async function execute<Data, Variables>(
   query: TadaDocumentNode<Data, Variables>,
   ...[variables]: Variables extends Record<string, never> ? [] : [Variables]
 ): Promise<Data> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  }
+
+  const credentials = loadCredentials()
+  if (credentials) {
+    const idToken = await refreshIdToken(credentials.refreshToken)
+    headers["Authorization"] = `Bearer ${idToken}`
+    headers["provider"] = "prompton"
+  }
+
   const res = await fetch(ENDPOINT, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ query: print(query), variables }),
   })
 
